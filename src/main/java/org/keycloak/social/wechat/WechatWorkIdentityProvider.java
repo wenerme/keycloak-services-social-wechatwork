@@ -17,13 +17,7 @@
 package org.keycloak.social.wechat;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import javax.ws.rs.GET;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.*;
+import com.google.common.base.Strings;
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
@@ -46,6 +40,15 @@ import org.keycloak.models.UserModel;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class WechatWorkIdentityProvider
     extends AbstractOAuth2IdentityProvider<WechatWorkProviderConfig>
@@ -169,7 +172,7 @@ public class WechatWorkIdentityProvider
   protected BrokeredIdentityContext extractIdentityFromProfile(
       EventBuilder event, JsonNode profile) {
     logger.info(profile.toString());
-    // profile: see https://work.weixin.qq.com/api/doc#90000/90135/90196
+    // profile: see https://work.weixin.qq.com/api/doc/90000/90135/90196
     BrokeredIdentityContext identity =
         new BrokeredIdentityContext((getJsonProperty(profile, "userid")));
 
@@ -349,18 +352,25 @@ public class WechatWorkIdentityProvider
     }
   }
 
-  @Override
-  public void updateBrokeredUser(
-      KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
-    user.setSingleAttribute(PROFILE_MOBILE, context.getUserAttribute(PROFILE_MOBILE));
-    user.setSingleAttribute(PROFILE_GENDER, context.getUserAttribute(PROFILE_GENDER));
-    user.setSingleAttribute(PROFILE_STATUS, context.getUserAttribute(PROFILE_STATUS));
-    user.setSingleAttribute(PROFILE_ENABLE, context.getUserAttribute(PROFILE_ENABLE));
-    user.setSingleAttribute(PROFILE_USERID, context.getUserAttribute(PROFILE_USERID));
+//  @Override
+//  public void updateBrokeredUser(
+//      KeycloakSession session, RealmModel realm, UserModel user, BrokeredIdentityContext context) {
+//
+//    // user.setSingleAttribute(PROFILE_MOBILE, context.getUserAttribute(PROFILE_MOBILE));
+//    // user.setSingleAttribute(PROFILE_GENDER, context.getUserAttribute(PROFILE_GENDER));
+//    // user.setSingleAttribute(PROFILE_STATUS, context.getUserAttribute(PROFILE_STATUS));
+//    // user.setSingleAttribute(PROFILE_ENABLE, context.getUserAttribute(PROFILE_ENABLE));
+//    // user.setSingleAttribute(PROFILE_USERID, context.getUserAttribute(PROFILE_USERID));
+//
+//    setEmpty(user.getUsername(), context.getUsername(), user::setUsername);
+//    setEmpty(user.getEmail(), context.getEmail(), user::setEmail);
+//    setEmpty(user.getFirstName(), context.getFirstName(), user::setFirstName);
+//    setEmpty(user.getLastName(), context.getLastName(), user::setLastName);
+//  }
 
-    user.setUsername(context.getUsername());
-    user.setFirstName(context.getFirstName());
-    user.setLastName(context.getLastName());
-    user.setEmail(context.getEmail());
+  static void setEmpty(String s, String to, Consumer<String> set) {
+    if (!Strings.isNullOrEmpty(s)) {
+      set.accept(to);
+    }
   }
 }
